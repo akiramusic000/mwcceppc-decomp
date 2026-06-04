@@ -2,9 +2,13 @@
 
 This repository aims to decompile the Metrowerks C/C++ compiler for Embedded PowerPC for GameCube and Wii.
 
+It currently targets mwcceppc for Wii 1.1.
+
 ## Setup
 
 1. Find a copy of CodeWarrior for Windows 9.2 and install it.
+
+1. Find a copy of the Wii 1.1 `mwcceppc` compiler and copy the executable into `original`.
 
 1. Copy the entire `CodeWarrior` directory into `compilers`.
 
