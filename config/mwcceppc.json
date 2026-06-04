@@ -1,0 +1,40 @@
+{
+    "meta": {
+        "fileName": "mwcceppc.exe",
+        "type": "EXE",
+        "defaultCompilerFlags": "-O4 -align 2 -enum min -inline auto -wchar_t on -bool off -Cpp_exceptions off",
+        "moduleNum": 0,
+        "baseAddr": "00400000",
+        "sections": {
+            ".text":  { "index": 0, "align": 16, "size": "0x272000" },
+            ".exc":   { "index": 1, "align": 4, "size": "0x200" },
+            ".rdata": { "index": 2, "align": 8, "size": "0x16200" },
+            ".data":  { "index": 3, "align": 8, "size": "0x7da00" },
+            ".rsc":   { "index": 4, "align": 8, "size": "0x12a00" },
+            ".CRT":   { "index": 5, "align": 4, "size": "0x200" },
+            ".idata": { "index": 6, "align": 4, "size": "0xc00" },
+            ".bss":   { "index": 7, "align": 4, "size": "0x794e5" },
+            ".reloc": { "index": 8, "align": 4, "size": "0x32e00" }
+        }
+    },
+    "slices": [
+        {
+            "nonMatching": true,
+            "source": "OS.c",
+            "memoryRanges": {
+                ".text": "0xe960-0xea10",
+                ".data": "0x10df3-0x10e30",
+                ".bss": "0xf3c-0xf48"
+            }
+        },
+        {
+            "nonMatching": true,
+            "source": "CABI.c",
+            "memoryRanges": {
+                ".text": "0x167a60-0x16dad0",
+                ".rdata": "0xc318-0xc338",
+                ".data": "0x42354-0x4235c"
+            }
+        }
+    ]
+}

@@ -1,0 +1,25 @@
+# Output folder
+bin/
+*.ninja
+
+# Original files
+*.exe
+
+# Compiler files
+compilers/*
+
+# objdiff file
+objdiff.json
+
+# IDE configuration files
+.vscode/
+
+# Python cache/compiled modules
+*.pyc
+__pycache__/
+
+# Clang cache
+.cache/
+
+# Clangd compile commands
+compile_commands.json

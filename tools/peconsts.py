@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+# PE constants
+
+from enum import IntEnum
+
+class ImageDirectoryType(IntEnum):
+    IMAGE_DIRECTORY_ENTRY_EXPORT = 0
+    IMAGE_DIRECTORY_ENTRY_IMPORT = 1
+    IMAGE_DIRECTORY_ENTRY_RESOURCE = 2
+    IMAGE_DIRECTORY_ENTRY_EXCEPTION = 3
+    IMAGE_DIRECTORY_ENTRY_SECURITY = 4
+    IMAGE_DIRECTORY_ENTRY_BASERELOC = 5
+    IMAGE_DIRECTORY_ENTRY_DEBUG = 6
+    IMAGE_DIRECTORY_ENTRY_ARCHITECTURE = 7
+    IMAGE_DIRECTORY_ENTRY_GLOBALPTR = 8
+    IMAGE_DIRECTORY_ENTRY_TLS = 9
+    IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG = 10
+    IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT = 11
+    IMAGE_DIRECTORY_ENTRY_IAT = 12
+    IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT = 13
+    IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR = 14
+    IMAGE_DIRECTORY_ENTRY_RESERVED = 15
+
+class CVSubsection(IntEnum):
+	Module = 0x120
+	Types = 0x121
+	Public = 0x122
+	PublicSym = 0x123
+	Symbols = 0x124
+	AlignSym = 0x125
+	SrcLnSeg = 0x126
+	SrcModule = 0x127
+	Libraries = 0x128
+	GlobalSym = 0x129
+	GlobalPub = 0x12a
+	GlobalTypes = 0x12b
+	MPC = 0x12c
+	SegMap = 0x12d
+	SegName = 0x12e
+	PreComp = 0x12f
+	OffsetMap16 = 0x131
+	OffsetMap32 = 0x132
+	FileIndex = 0x133
+	StaticSym = 0x134
