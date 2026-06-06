@@ -4,7 +4,6 @@
 /*
  * Common imports and Mac OS types
  */
-#include <compat.h>
 #include <ctype.h>
 #include <float.h>
 #include <setjmp.h>

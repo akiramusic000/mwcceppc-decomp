@@ -53,7 +53,7 @@ def gen_compile_commands(slice_file: SliceFile):
         flags = slice_file.meta.defaultCompilerFlags if slice.ccFlags == '' else slice.ccFlags
         file = slice.source
         flags = mwcc_to_clang(flags)
-        arguments = ["/usr/bin/clang", "-c", str(file), "-o", str(output), "-D__INTEL__", "-Wno-ignored-attributes", "-fdeclspec", *flags, *inc_dir_args]
+        arguments = ["/usr/bin/clang", "-c", str(file), "-o", str(output), "-D__INTEL__", "-Dwchar_t=\"unsigned int\"", "-D__option=", "-Wno-ignored-attributes", "-fdeclspec", *flags, *inc_dir_args]
 
         command = {
             "directory": str(directory),
