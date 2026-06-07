@@ -6,6 +6,7 @@ from typing import cast
 
 from color_term import *
 from coff import COFF, COFFSection, COFFSymbol, COFFRelocation
+from format_symbols import format_symbols
 from peconsts import ImageDirectoryType
 from pefile import PE, DebugDirectoryEntry
 from project_settings import *
@@ -68,7 +69,7 @@ def extract_slice(pe_file: PE, slice: Slice, syms: dict[str, int]) -> COFF:
 
         for offset in range(0, len(sec_data) - 4):
             ptr = int.from_bytes(
-                sec_data[offset : offset + 4], byteorder="little"
+                sec_data[offset : offset + 4], byteorder='little'
             )
 
             def add_relocation(ptr, absolute):
@@ -77,7 +78,7 @@ def extract_slice(pe_file: PE, slice: Slice, syms: dict[str, int]) -> COFF:
                 coff_symbol.name = name
                 coff_symbol.type = 0x20 if coff_sec.flags & 0x00000020 != 0 else 0x0 # 0x00000020 = IMAGE_SCN_CNT_CODE
                 coff_symbol.storage_class = 0x2
-                
+
                 if not coff_symbol in coff_file.symbols:
                     coff_file.symbols.append(coff_symbol)
                 symbol_idx = coff_file.symbols.index(coff_symbol)
@@ -94,14 +95,14 @@ def extract_slice(pe_file: PE, slice: Slice, syms: dict[str, int]) -> COFF:
                 add_relocation(ptr, True)
 
             displacement = int.from_bytes(
-                coff_sec.data[offset : offset + 4], byteorder="little", signed=True
+                coff_sec.data[offset : offset + 4], byteorder='little', signed=True
             )
 
             relative_ptr = offset + sec.start_offs + pe_sec.virt_addr + 0x400000 + 4 + displacement
 
             if relative_ptr in inverse_syms:
                 add_relocation(relative_ptr, False)
-        
+
         actual_sec_idx += 1
 
     return coff_file
@@ -110,15 +111,7 @@ def extract_slice(pe_file: PE, slice: Slice, syms: dict[str, int]) -> COFF:
 def slice_exe(exe_file: Path, out_path: Path, symbol_file: Path) -> None:
     assert exe_file.is_file()
 
-    # TODO: use an actual symbol map file
-    syms: dict[str, int] = {}
-
-    for line in symbol_file.read_text().splitlines():
-        if line.strip():
-            sym, addr = line.split('=')
-            if sym in syms:
-                print_warn('Warning: symbol', sym, 'defined multiple times in', symbol_file.name, end='!\n')
-            syms[sym.strip()] = int(addr, 16)
+    syms = format_symbols(symbol_file)
 
     # Read slices
     with open(exe_file, 'rb') as f:

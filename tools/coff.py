@@ -167,7 +167,7 @@ class COFF:
         for i, sec in enumerate(self.sections):
             file.seek(sec_offsets[i])
             file.write(sec.data)
-        
+
         for i, sec in enumerate(self.sections):
             file.seek(reloc_offsets[i])
             for relocation in sec.relocations:

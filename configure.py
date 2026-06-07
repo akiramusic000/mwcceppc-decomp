@@ -6,7 +6,7 @@
 import sys
 from pathlib import Path
 
-sys.path.append("tools")
+sys.path.append('tools')
 
 from tools.project_settings import *
 from tools.slicelib import *
@@ -47,47 +47,50 @@ def gen_compile_commands(slice_file: SliceFile):
     for slice in slice_file.parsed_slices:
         if not slice.source:
             continue
-        
+
         inc_dir_args = [f'-I{i}' for i in INCDIRS]
         output = (BUILDDIR_COMPILED / slice_file.unit_name() / slice.source).with_suffix('.o')
         flags = slice_file.meta.defaultCompilerFlags if slice.ccFlags == '' else slice.ccFlags
         file = slice.source
         flags = mwcc_to_clang(flags)
-        arguments = ["/usr/bin/clang", "-c", str(file), "-o", str(output), "-D__INTEL__", "-Dwchar_t=unsigned int", "-D__option=", "-Wno-ignored-attributes", "-fdeclspec", *flags, *inc_dir_args]
+        arguments = [
+            '/usr/bin/clang', '-c', str(file), '-o', str(output),
+            '-D__INTEL__', '-Dwchar_t=unsigned int', '-D__option=',
+            '-Wno-ignored-attributes', '-Wno-pragma-pack', '-fdeclspec',
+            *flags, *inc_dir_args
+        ]
 
         command = {
-            "directory": str(directory),
-            "file": str(file),
-            "output": str(output),
-            "arguments": arguments,
+            'directory': str(directory),
+            'file': str(file),
+            'output': str(output),
+            'arguments': arguments,
         }
         commands.append(command)
-    
-    encoder = json.encoder.JSONEncoder()
-    compile_commands = encoder.encode(commands)
-    Path("compile_commands.json").write_text(compile_commands)
+
+    Path('compile_commands.json').write_text(json.dumps(commands, indent=2))
 
 def mwcc_to_clang(flags: str) -> list[str]:
-    PASSTHROUGH = ["-O4", "-O3", "-O2", "-O1", "-O0"]
-    ONE_STEP = {
+    PASSTHROUGH = ['-O4', '-O3', '-O2', '-O1', '-O0']
+    ONE_ARG = {
     }
-    TWO_STEP_LAMBDA = {
-        "-align": lambda x : f'-fpack-struct={x}',
+    TWO_ARG_LAMBDA = {
+        '-align': lambda x : f'-fpack-struct={x}',
     }
-    TWO_STEP_DICT = {
-        "-enum": {
-            "min": "-fshort-enums",
-            "int": "-fno-short-enums"
+    TWO_ARG_DICT = {
+        '-enum': {
+            'min': '-fshort-enums',
+            'int': '-fno-short-enums'
         },
-        "-inline": {
-            "auto": "-finline-functions",
-            "none": "-fno-inline-functions",
-            "off": "-fno-inline-functions",
-            "deferred": "-finline-functions"
+        '-inline': {
+            'auto': '-finline-functions',
+            'none': '-fno-inline-functions',
+            'off': '-fno-inline-functions',
+            'deferred': '-finline-functions'
         },
-        "-Cpp_exceptions": {
-            "on": "-fcxx-exceptions",
-            "off": "-fno-cxx-exceptions",
+        '-Cpp_exceptions': {
+            'on': '-fcxx-exceptions',
+            'off': '-fno-cxx-exceptions',
         }
     }
 
@@ -103,19 +106,18 @@ def mwcc_to_clang(flags: str) -> list[str]:
             out.append(flag)
             i += 1
             continue
-        
-        if flag in TWO_STEP_LAMBDA:
-            out.append(TWO_STEP_LAMBDA[flag](flags_split[i + 1]))
+
+        if flag in TWO_ARG_LAMBDA:
+            out.append(TWO_ARG_LAMBDA[flag](flags_split[i + 1]))
             i += 2
             continue
-        
-        if flag in TWO_STEP_DICT:
-            out.append(TWO_STEP_DICT[flag][flags_split[i + 1]])
+
+        if flag in TWO_ARG_DICT:
+            out.append(TWO_ARG_DICT[flag][flags_split[i + 1]])
             i += 2
             continue
-        
+
         i += 1
-            
 
     return out
 
@@ -187,7 +189,7 @@ writer.rule('cw',
             description='Compile $in')
 
 writer.rule('slice_exe',
-            command=f'$python {FORMAT_SYMBOLS} $symbols && $python {SLICE_EXE} $in -s $symbols -o $out_dir',
+            command=f'$python {SLICE_EXE} $in -s $symbols -o $out_dir',
             description='Slice $in')
 
 writer.rule('link',
