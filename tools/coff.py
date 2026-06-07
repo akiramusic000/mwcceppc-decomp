@@ -82,6 +82,7 @@ class COFFSection:
     def __init__(self) -> None:
         self.sec_name: str = ''
         self.data: bytearray = bytearray()
+        self.size: int | None = None
         self.flags: int = 0
         self.relocations: list[COFFRelocation] = []
 
@@ -137,7 +138,7 @@ class COFF:
         pos = self.file_header.size + len(self.sections) * self.section_header.size
         for sec in self.sections:
             sec_offsets.append(pos)
-            sec_lengths.append(len(sec.data))
+            sec_lengths.append(sec.size or len(sec.data))
             pos += len(sec.data)
             reloc_offsets.append(pos)
             reloc_counts.append(len(sec.relocations))

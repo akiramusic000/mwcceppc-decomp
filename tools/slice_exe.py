@@ -22,19 +22,22 @@ def extract_slice(pe_file: PE, slice: Slice, syms: dict[str, int]) -> COFF:
     drectve_sec.data = bytearray(linker_flags.encode())
     coff_file.sections.append(drectve_sec)
 
+    actual_sec_idx = 2
+
     for sec in slice.sliceSecs:
         pe_sec = pe_file.sections[sec.sec_idx]
         sec_data = pe_sec.data[sec.start_offs:sec.end_offs]
         coff_sec = COFFSection()
         coff_sec.sec_name = sec.sec_name
         coff_sec.data = bytearray(sec_data)
+        coff_sec.size = sec.end_offs - sec.start_offs
         coff_sec.flags = pe_sec.flags
         coff_file.sections.append(coff_sec)
 
         sym = COFFSymbol()
         sym.name = sec.sec_name
         sym.value = 0
-        sym.section_number = sec.sec_idx + 1
+        sym.section_number = actual_sec_idx
         sym.storage_class = 3
         coff_file.symbols.append(sym)
 
@@ -46,7 +49,7 @@ def extract_slice(pe_file: PE, slice: Slice, syms: dict[str, int]) -> COFF:
                     sym.name = name
                     sym.value = sym_addr - sec.start_offs
                     sym.type = 0x20
-                    sym.section_number = sec.sec_idx + 2
+                    sym.section_number = actual_sec_idx
                     sym.storage_class = 2
                     coff_file.symbols.append(sym)
 
@@ -56,8 +59,8 @@ def extract_slice(pe_file: PE, slice: Slice, syms: dict[str, int]) -> COFF:
                 sym = COFFSymbol()
                 sym.name = name
                 sym.value = addr - 0x400000 - pe_sec.virt_addr - sec.start_offs
-                sym.type = 0x20
-                sym.section_number = sec.sec_idx + 2
+                sym.type = 0x20 if coff_sec.flags & 0x00000020 != 0 else 0x0 # 0x00000020 = IMAGE_SCN_CNT_CODE
+                sym.section_number = actual_sec_idx
                 sym.storage_class = 2
                 coff_file.symbols.append(sym)
 
@@ -98,6 +101,8 @@ def extract_slice(pe_file: PE, slice: Slice, syms: dict[str, int]) -> COFF:
 
             if relative_ptr in inverse_syms:
                 add_relocation(relative_ptr, False)
+        
+        actual_sec_idx += 1
 
     return coff_file
 
