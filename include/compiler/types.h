@@ -167,10 +167,11 @@ struct TypeClass {
     // SOMInfo *sominfo;
     ObjCInfo *objcinfo;
     UInt32 flags;
+    UInt32 othersize;
     SInt8 mode;
     SInt8 action;
     SInt16 align;
-    UInt8 eflags;
+    UInt16 eflags;
 };
 
 typedef enum {

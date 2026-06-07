@@ -182,6 +182,7 @@ typedef struct CompilerLinkerOptions {
     Boolean warn_no_side_effect;
     Boolean warn_resultnotused;
     Boolean warn_ptr_int_conv;
+    UInt8 unk[0x1dc];
     char structalignment;
     Boolean alignarraymembers;
     Boolean dont_reuse_strings;

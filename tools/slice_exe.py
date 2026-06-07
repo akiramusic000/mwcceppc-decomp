@@ -11,6 +11,8 @@ from peconsts import ImageDirectoryType
 from pefile import PE, DebugDirectoryEntry
 from project_settings import *
 from slicelib import *
+from bisect import bisect_left
+import capstone
 
 def extract_slice(pe_file: PE, slice: Slice, syms: dict[str, int]) -> COFF:
     coff_file = COFF()
@@ -23,7 +25,20 @@ def extract_slice(pe_file: PE, slice: Slice, syms: dict[str, int]) -> COFF:
     drectve_sec.data = bytearray(linker_flags.encode())
     coff_file.sections.append(drectve_sec)
 
-    actual_sec_idx = 2
+    addr_to_sym: dict[int, str] = {v: k for k, v in syms.items()}
+
+    dbg = cast(DebugDirectoryEntry, pe_file.data_directory[ImageDirectoryType.IMAGE_DIRECTORY_ENTRY_DEBUG])
+    for s in dbg.codeview.modules:
+        for (sec_idx, sym_addr, name) in s.symbols:
+            virt_addr = pe_file.sections[sec_idx].virt_addr + sym_addr + 0x400000
+            addr_to_sym[virt_addr] = name
+
+    sorted_sym_addrs = sorted(addr_to_sym.keys())
+
+    actual_sec_idx = 0
+
+    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+    md.detail = True
 
     for sec in slice.sliceSecs:
         pe_sec = pe_file.sections[sec.sec_idx]
@@ -38,70 +53,62 @@ def extract_slice(pe_file: PE, slice: Slice, syms: dict[str, int]) -> COFF:
         sym = COFFSymbol()
         sym.name = sec.sec_name
         sym.value = 0
-        sym.section_number = actual_sec_idx
+        sym.section_number = actual_sec_idx + 2
         sym.storage_class = 3
         coff_file.symbols.append(sym)
 
-        dbg = cast(DebugDirectoryEntry, pe_file.data_directory[ImageDirectoryType.IMAGE_DIRECTORY_ENTRY_DEBUG])
-        for s in dbg.codeview.modules:
-            for (sec_idx, sym_addr, name) in s.symbols:
-                if sec.sec_idx == sec_idx and sec.start_offs <= sym_addr < sec.end_offs:
-                    sym = COFFSymbol()
-                    sym.name = name
-                    sym.value = sym_addr - sec.start_offs
-                    sym.type = 0x20
-                    sym.section_number = actual_sec_idx
-                    sym.storage_class = 2
-                    coff_file.symbols.append(sym)
-
-        for name in syms:
-            addr = syms[name]
+        for addr in addr_to_sym:
             if sec.start_offs <= addr - 0x400000 - pe_sec.virt_addr < sec.end_offs:
                 sym = COFFSymbol()
-                sym.name = name
+                sym.name = addr_to_sym[addr]
                 sym.value = addr - 0x400000 - pe_sec.virt_addr - sec.start_offs
                 sym.type = 0x20 if coff_sec.flags & 0x00000020 != 0 else 0x0 # 0x00000020 = IMAGE_SCN_CNT_CODE
-                sym.section_number = actual_sec_idx
+                sym.section_number = actual_sec_idx + 2
                 sym.storage_class = 2
                 coff_file.symbols.append(sym)
 
-        inverse_syms = {v: k for k, v in syms.items()}
+        def add_relocation(offset: int, addend: int, target: int, is_absolute: bool) -> None:
+            name = addr_to_sym[target]
+            coff_symbol = COFFSymbol()
+            coff_symbol.name = name
+            coff_symbol.type = 0x20 if coff_sec.flags & 0x00000020 != 0 else 0x0 # 0x00000020 = IMAGE_SCN_CNT_CODE
+            coff_symbol.storage_class = 0x2
 
-        for offset in range(0, len(sec_data) - 4):
-            ptr = int.from_bytes(
-                sec_data[offset : offset + 4], byteorder='little'
-            )
+            if not coff_symbol in coff_file.symbols:
+                coff_file.symbols.append(coff_symbol)
+            symbol_idx = coff_file.symbols.index(coff_symbol)
 
-            def add_relocation(ptr, absolute):
-                name = inverse_syms[ptr]
-                coff_symbol = COFFSymbol()
-                coff_symbol.name = name
-                coff_symbol.type = 0x20 if coff_sec.flags & 0x00000020 != 0 else 0x0 # 0x00000020 = IMAGE_SCN_CNT_CODE
-                coff_symbol.storage_class = 0x2
+            coff_relocation = COFFRelocation()
+            coff_relocation.address = offset
+            coff_relocation.sym_index = symbol_idx
+            coff_relocation.type = 0x0006 if is_absolute else 0x0014
+            coff_sec.relocations.append(coff_relocation)
+            coff_sec.data[offset:offset+4] = addend.to_bytes(4, byteorder='little')
 
-                if not coff_symbol in coff_file.symbols:
-                    coff_file.symbols.append(coff_symbol)
-                symbol_idx = coff_file.symbols.index(coff_symbol)
+        if not slice.sliceName.startswith('filler') and sec.sec_name == '.text':
+            for insn in md.disasm(sec_data, pe_sec.virt_addr + sec.start_offs + 0x400000):
+                # print(f'{insn.address:x}:\t{insn.mnemonic}\t{insn.op_str}')
+                if insn.group(capstone.x86.X86_GRP_CALL):
+                    target = insn.operands[0].value.imm
+                    if target in addr_to_sym:
+                        is_absolute = not insn.group(capstone.x86.X86_GRP_BRANCH_RELATIVE)
+                        section_offset = insn.address - pe_sec.virt_addr - sec.start_offs - 0x400000
+                        add_relocation(section_offset + 1, 0, target, is_absolute)
 
-                coff_relocation = COFFRelocation()
-                coff_relocation.address = offset
-                coff_relocation.sym_index = symbol_idx
-                coff_relocation.type = 0x0006 if absolute else 0x0014
-                coff_sec.relocations.append(coff_relocation)
+                if not insn.group(capstone.x86.X86_GRP_BRANCH_RELATIVE):
+                    for op in insn.operands:
+                        if op.type == capstone.x86.X86_OP_MEM and 0x400000 < op.value.mem.disp < 0x1000000 \
+                        or op.type == capstone.x86.X86_OP_IMM and 0x400000 < op.value.imm < 0x1000000:
+                            val = op.value.mem.disp if op.type == capstone.x86.X86_OP_MEM else op.value.imm
+                            offset = insn.disp_offset if op.type == capstone.x86.X86_OP_MEM else insn.imm_offset
 
-                coff_sec.data[offset : offset + 4] = bytes(0x4)
-
-            if ptr in inverse_syms:
-                add_relocation(ptr, True)
-
-            displacement = int.from_bytes(
-                coff_sec.data[offset : offset + 4], byteorder='little', signed=True
-            )
-
-            relative_ptr = offset + sec.start_offs + pe_sec.virt_addr + 0x400000 + 4 + displacement
-
-            if relative_ptr in inverse_syms:
-                add_relocation(relative_ptr, False)
+                            next_addr_below = sorted_sym_addrs[bisect_left(sorted_sym_addrs, val + 1) - 1]
+                            name = addr_to_sym[next_addr_below]
+                            is_absolute = True
+                            section_offset = insn.address - pe_sec.virt_addr - sec.start_offs - 0x400000
+                            addend = val - next_addr_below
+                            if addend < 0x8000:
+                                add_relocation(section_offset + offset, addend, next_addr_below, is_absolute)
 
         actual_sec_idx += 1
 

@@ -12,6 +12,8 @@ It currently targets mwcceppc for Wii 1.1.
 
 1. Copy the entire `CodeWarrior` directory into `compilers`.
 
+1. Install capstone with `pip install capstone`.
+
 1. Run `configure.py` to set everything up.
 
 1. Run `ninja` to build the project. You should now be able to open the folder in objdiff.

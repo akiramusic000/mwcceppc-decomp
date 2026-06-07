@@ -170,3 +170,42 @@ ENode *CABI_MakeThisExpr(TypeClass *tclass, SInt32 offset) {
 
     return CABI_AddPointerOffset(expr, offset);
 }
+
+static SInt32 CABI_FindNVBase(TypeClass *tclass, TypeClass *baseclass, SInt32 offset) {
+    ClassList *base;
+    SInt32 tmp;
+
+    if (tclass == baseclass)
+        return offset;
+
+    for (base = tclass->bases; base; base = base->next) {
+        if (!base->is_virtual && (tmp = CABI_FindNVBase(base->base, baseclass, offset + base->offset)) >= 0) {
+            return tmp;
+        }
+    }
+
+    return -1;
+}
+
+SInt32 CABI_GetCtorOffsetOffset(TypeClass *tclass, TypeClass *baseclass) {
+    SInt32 baseSize;
+    SInt32 size;
+    char saveAlignMode;
+
+    size = tclass->othersize;
+    if (baseclass) {
+        baseSize = CABI_FindNVBase(tclass, baseclass, 0);
+        #line 1791
+        CError_ASSERT(baseSize >= 0);
+        size -= baseSize;
+    }
+
+    saveAlignMode = copts.structalignment;
+    if (tclass->eflags & CLASS_EFLAGS_F0) {
+        copts.structalignment = ((tclass->eflags & CLASS_EFLAGS_F0) >> 4) - 1;
+    }
+    size += CMach_MemberAlignValue(TYPE(&stunsignedlong), size);
+    copts.structalignment = saveAlignMode;
+
+    return size;
+}
