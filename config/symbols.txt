@@ -1,7 +1,7 @@
 _getenv=0x403730
 _CABI_FindNVBase=0x56dfe0
 FUN_0056e140=0x56e140
-_CABI_VTRelated=0x56e480
+_CABI_MakeVTableLayout=0x56e480
 _CABI_AllocateVTable=0x56e6b0
 _CABI_FindZeroVirtualBaseMember=0x56e7f0
 .sw$2293=0x680318

@@ -133,6 +133,14 @@ struct VClassList {
     Boolean has_override;
 };
 
+typedef struct ClassListList {
+    struct ClassListList *next;
+    ClassList *base;
+    VClassList *vbase;
+    Boolean m_0c;
+    Boolean m_0d;
+} ClassListList;
+
 typedef struct ClassFriend {
     struct ClassFriend *next;
     union {
@@ -149,9 +157,9 @@ struct BClassList {
 
 typedef struct VTable {
     Object *object;
-    TypeClass *owner;
     SInt32 offset;
     SInt32 size;
+    TypeClass *owner;
 } VTable;
 
 struct TypeClass {
@@ -169,9 +177,11 @@ struct TypeClass {
     UInt32 flags;
     UInt32 othersize;
     SInt8 mode;
-    SInt8 action;
     SInt16 align;
     UInt16 eflags;
+    UInt8 m_30;
+    SInt8 action;
+    SInt8 m_31;
 };
 
 typedef enum {
@@ -275,6 +285,7 @@ struct TypeMemberFunc {
     UInt32 qual;
     UInt32 flags;
     TypeClass *theclass;
+    UInt8 pad[0x8];
     SInt32 vtbl_index; // index of this method within the vtable
     SInt32 funcid; // ID used for tracking this method within browse data
     Boolean is_static; // is static

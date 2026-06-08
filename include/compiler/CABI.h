@@ -7,6 +7,8 @@
 #pragma options align=mac68k
 #endif
 
+extern TypePointer vtable_ptr;
+
 typedef enum CABIDestroyMode {
     CABIDestroy0 = 0,
     CABIDestroy1 = 1,

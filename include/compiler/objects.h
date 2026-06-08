@@ -121,9 +121,9 @@ struct Object {
     HashNameNode *name;
     Type *type;
     UInt32 qual;
-    UInt8 pad2[2];
+    UInt16 flags;
     SInt16 sclass;
-    UInt8 flags;
+    SInt16 moreflags;
     ExtendedParam *extParam;
     Object *toc;
     VarRecord *varptr;

@@ -2,6 +2,7 @@
 #include <compiler/CABI.h>
 #include <compiler/CompilerTools.h>
 #include <compiler/CClass.h>
+#include <compiler/CDecl.h>
 #include <compiler/CError.h>
 #include <compiler/CExpr.h>
 #include <compiler/CFunc.h>
@@ -148,6 +149,149 @@ static Object *CABI_FindZeroVirtualBaseMember(TypeClass *tclass, Object *obj) {
 void CABI_AddVTable(TypeClass *tclass) {
     tclass->vtable = galloc(sizeof(VTable));
     memclrw(tclass->vtable, sizeof(VTable));
+}
+
+static void CABI_ApplyClassFlags(Object *obj, UInt8 flags) {
+    if (flags & CLASS_EFLAGS_INTERNAL) {
+        obj->flags |= OBJECT_INTERNAL;
+    }
+    if (flags & CLASS_EFLAGS_IMPORT) {
+        obj->flags |= OBJECT_IMPORT;
+    }
+    if (flags & CLASS_EFLAGS_EXPORT) {
+        obj->flags |= OBJECT_EXPORT;
+    }
+}
+
+static void CABI_MakeVTableLayout(ClassListList *clsList, ClassLayout *layout, TypeClass *tclass) {
+    TypeClass *cls;
+    Object *obj;
+    ClassListList *cur;
+    SInt32 vtsize;
+    int i;
+    UInt16 flags;
+    VTableHeaderInfo hi;
+
+    vtsize = 0;
+    CABI_GetVTableHeaderInfo(&hi);
+    if (clsList != NULL && clsList->m_0c) {
+        #line 1450
+        CError_ASSERT(clsList->base != NULL);
+        cls = clsList->base->base;
+        vtsize = 0;
+    } else {
+        cls = NULL;
+        if (tclass->flags & (CLASS_SINGLE_OBJECT | CLASS_COM_OBJECT)) {
+            vtsize = vtable_ptr.size;
+        } else {
+            vtsize = hi.size;
+        }
+    }
+
+    for (cur = clsList; cur; cur = cur->next) {
+        ClassList *curbase = cur->base;
+        if (curbase != NULL && curbase->base->vtable != NULL) {
+            curbase->voffset = vtsize;
+            vtsize += curbase->base->vtable->size;
+        }
+    }
+
+    for (i = 0; i < layout->lex_order_count; i++) {
+        Object *base;
+        #line 1481
+        CError_ASSERT(base = OBJECT(layout->objlist[i]));
+        if (base->otype == OT_OBJECT && base->datatype == DVFUNC) {
+            TypeMemberFunc *tmethod = TYPE_METHOD(base->type);
+            if (cls == NULL) {
+                vtsize += 4;
+            } else {
+                Object *baseobj = CABI_FindZeroVirtualBaseMember(cls, base);
+                if (baseobj) {
+                    tmethod->vtbl_index = TYPE_METHOD(baseobj->type)->vtbl_index;
+                } else {
+                    tmethod->vtbl_index = vtsize;
+                    vtsize += 4;
+                }
+            }
+        }
+    }
+
+    tclass->vtable->size = vtsize;
+
+    for (cur = clsList; cur; cur = cur->next) {
+        VClassList *curvbase = cur->vbase;
+        if (curvbase != NULL && curvbase->base->vtable != NULL) {
+            curvbase->voffset = vtsize;
+            vtsize += curvbase->base->vtable->size;
+        }
+    }
+
+    obj = CParser_NewCompilerDefDataObject();
+    CABI_ApplyClassFlags(obj, tclass->eflags);
+
+    obj->name = CMangler_VTableName(tclass);
+    obj->type = CDecl_NewOpaqueType(vtsize, 4);
+    obj->qual = Q_CONST;
+    obj->nspace = tclass->nspace;
+    switch (tclass->action) {
+        case CLASS_ACTION_0:
+            obj->sclass = TK_STATIC;
+            obj->qual |= Q_20000;
+            break;
+    }
+    CParser_UpdateObject(obj, NULL);
+    tclass->vtable->object = obj;
+    tclass->vtable->offset = vtsize;
+}
+
+static void CABI_AllocateVTable(ClassListList *clsList, ClassLayout *layout, TypeClass *tclass) {
+    ObjMemberVar *member;
+    TypeClass *cls;
+    int i;
+
+    if (!tclass->vtable) {
+        CABI_AddVTable(tclass);
+        layout->xA = layout->lex_order_count - 1;
+    }
+
+    if (clsList != NULL && clsList->m_0c) {
+        #line 1381
+        CError_ASSERT(clsList->base != NULL);
+        cls = clsList->base->base;
+    } else {
+        cls = NULL;
+    }
+
+    if (cls == NULL) {
+        member = galloc(sizeof(ObjMemberVar));
+        memclrw(member, sizeof(ObjMemberVar));
+
+        member->otype = OT_MEMBERVAR;
+        member->access = ACCESSPUBLIC;
+        member->name = vptr_name_node;
+        member->type = TYPE(&vtable_ptr);
+        layout->vtable_ivar = member;
+
+        for (i = layout->xA; ; i--) {
+            if (i < 0) {
+                member->next = tclass->ivars;
+                tclass->ivars = member;
+                break;
+            }
+
+            #line 1413
+            CError_ASSERT(layout->objlist[i]);
+
+            if (layout->objlist[i]->otype == OT_MEMBERVAR) {
+                member->next = OBJ_MEMBER_VAR(layout->objlist[i])->next;
+                OBJ_MEMBER_VAR(layout->objlist[i])->next = member;
+                break;
+            }
+        }
+    } else {
+        tclass->vtable->owner = cls->vtable->owner;
+        layout->vtable_ivar = NULL;
+    }
 }
 
 static Object *CABI_ThisArg(void) {
