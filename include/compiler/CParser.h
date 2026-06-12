@@ -604,6 +604,7 @@ extern Boolean is_const_object(Object *obj);
 extern Boolean is_volatile_object(Object *obj);
 extern Boolean CParserIsConstExpr(ENode *expr);
 extern Boolean CParserIsVolatileExpr(ENode *expr);
+extern Boolean CParser_IsDataObject(Object *obj);
 extern Boolean CParser_HasInternalLinkage(const Object *obj);
 extern Boolean CParser_HasInternalLinkage2(const Object *obj);
 extern Boolean CParser_IsVirtualFunction(Object *obj, TypeClass **tclass, SInt32 *index);

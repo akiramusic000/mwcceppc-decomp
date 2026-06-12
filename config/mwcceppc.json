@@ -2,7 +2,7 @@
     "meta": {
         "fileName": "mwcceppc.exe",
         "type": "EXE",
-        "defaultCompilerFlags": "-O4 -inline deferred -enum min -inline auto -wchar_t on -bool off -Cpp_exceptions off -str noreadonly -nostdinc",
+        "defaultCompilerFlags": "-opt l=4,speed,intrinsics -inline deferred -enum min -inline auto -wchar_t on -bool off -Cpp_exceptions off -str noreadonly -nostdinc",
         "moduleNum": 0,
         "baseAddr": "00400000",
         "sections": {
@@ -34,6 +34,13 @@
                 ".text": "0x167ad0-0x16dad0",
                 ".rdata": "0xc318-0xc338",
                 ".data": "0x42354-0x4235c"
+            }
+        },
+        {
+            "nonMatching": true,
+            "source": "CMangler.c",
+            "memoryRanges": {
+                ".text": "0x16dad0-0x170030"
             }
         }
     ]

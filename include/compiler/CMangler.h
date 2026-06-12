@@ -19,10 +19,12 @@ extern HashNameNode *CMangler_VTableName(TypeClass *theclass);
 extern HashNameNode *CMangler_RTTIObjectName(Type *type, UInt32 qual);
 extern HashNameNode *CMangler_ThunkName(Object *vfunc, SInt32 this_delta, SInt32 return_delta, SInt32 ctoroffset);
 extern HashNameNode *CMangler_TemplateInstanceName(HashNameNode *basename, TemplArg *args);
-extern void CMangler_MangleType(Type *type, UInt32 qual);
+extern void CMangler_MangleType(Type *type, UInt32 qual, Boolean keep_size);
 extern HashNameNode *CMangler_ConversionFuncName(Type *type, UInt32 qual);
 extern HashNameNode *CMangler_GetCovariantFunctionName(Object *dobj, TypeClass *theclass);
 extern HashNameNode *CMangler_GetLinkName(Object *obj);
+extern void CMangler_SetupLocalVarName(Object *obj, Object *expr, SInt32 varnum);
 extern void CMangler_SetupGuardVarName(Object *obj, Object *expr);
+extern void CMangler_SetupLocalStringName(Object *obj, Object *expr, SInt32 varnum);
 
 #endif

@@ -42,5 +42,6 @@ extern FuncArg *CTemplTool_DeduceArgCopy(TypeDeduce *deduce, FuncArg *args);
 extern Type *CTemplTool_DeduceTypeCopy(TypeDeduce *deduce, Type *type, UInt32 *resultQual);
 extern Type *CTemplTool_ResolveMemberSelfRefs(TemplClass *templ, Type *type, UInt32 *resultQual);
 extern Boolean CTemplTool_IsSameTemplateType(Type *a, Type *b);
+extern Boolean CTemplTool_IsTypeDepExpr(ENode *expr);
 
 #endif

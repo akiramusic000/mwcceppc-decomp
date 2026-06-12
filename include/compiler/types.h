@@ -36,31 +36,37 @@ struct Type {
 
 
 typedef enum IntegralType {
-    IT_BOOL = 0,
-    IT_CHAR = 1,
-    IT_SCHAR = 2,
-    IT_UCHAR = 3,
-    IT_WCHAR_T = 4,
-    IT_SHORT = 5,
-    IT_USHORT = 6,
-    IT_INT = 7,
-    IT_UINT = 8,
-    IT_LONG = 9,
-    IT_ULONG = 10,
-    IT_LONGLONG = 11,
-    IT_ULONGLONG = 12,
-    IT_FLOAT = 13,
-    IT_SHORTDOUBLE = 14,
-    IT_DOUBLE = 15,
-    IT_LONGDOUBLE = 16,
-    IT_17 = 17,
-    IT_18 = 18,
-    IT_19 = 19,
-    IT_20 = 20,
-    IT_21 = 21,
-    IT_22 = 22,
-    IT_23 = 23,
-    IT_24 = 24
+    IT_BOOL,
+    IT_CHAR,
+    IT_SCHAR,
+    IT_UCHAR,
+    IT_WCHAR_T,
+    IT_SHORT,
+    IT_USHORT,
+    IT_INT,
+    IT_UINT,
+    IT_LONG,
+    IT_ULONG,
+    IT_LONGLONG,
+    IT_ULONGLONG,
+    IT_FLOAT,
+    IT_SHORTDOUBLE,
+    IT_DOUBLE,
+    IT_LONGDOUBLE,
+    IT_IMAG_FLOAT,
+    IT_IMAG_DOUBLE,
+    IT_IMAG_LONG_DOUBLE,
+    IT_COMPLEX_FLOAT,
+    IT_COMPLEX_DOUBLE,
+    IT_COMPLEX_LONG_DOUBLE,
+    IT_23,
+    IT_24,
+    IT_25,
+    IT_26,
+    IT_27,
+    IT_28,
+    IT_29,
+    IT_30
 } IntegralType;
 
 // This is probably actually called AtomType / TypeAtom
@@ -86,7 +92,8 @@ struct TypeStruct {
     SInt32 size;
     HashNameNode *name;
     StructMember *members;
-    char stype;
+    UInt8 pad[4];
+    UInt8 stype;
     SInt16 align;
 };
 struct StructMember {
@@ -245,8 +252,8 @@ struct TypeFunc {
     FuncArg *args;
     ExceptSpecList *exspecs;
     Type *functype;
+    UInt8 pad2[0x4];
     UInt32 qual;
-    UInt8 pad[0x4];
     UInt32 flags;
 };
 

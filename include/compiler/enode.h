@@ -186,6 +186,10 @@ typedef union ENodeUnion {
         TemplArg *templargs;
         HashNameNode *name;
     } objlist;
+    struct {
+        Object *object;
+        Object *object2;
+    } objaccess;
     EMemberInfo *emember;
     void *inst;
     CtorChain *ctorinit;

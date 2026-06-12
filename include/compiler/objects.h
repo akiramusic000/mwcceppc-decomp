@@ -102,10 +102,10 @@ typedef enum DataType {
     DABSOLUTE,
     DFUNC,
     DVFUNC,
-    DINLINEFUNC,
+    // DINLINEFUNC,
     DALIAS,
     DEXPR,
-    DNONLAZYPTR,
+    // DNONLAZYPTR,
     DLABEL,
     DUNUSED
 } DataType;
@@ -127,6 +127,7 @@ struct Object {
     ExtendedParam *extParam;
     Object *toc;
     VarRecord *varptr;
+    UInt8 pad2[0x12];
     union {
         struct {
             union {
@@ -173,6 +174,7 @@ struct Object {
             Object *realObj;
         } var;
         struct {
+            UInt32 pad;
             Object *object;
             //TypeClass *member;
             BClassList *member; // ???
