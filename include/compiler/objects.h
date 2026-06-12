@@ -116,7 +116,7 @@ struct Object {
     AccessType access;
     DataType datatype;
     Section section;
-    UInt8 pad[4];
+    Object *objref;
     NameSpace *nspace;
     HashNameNode *name;
     Type *type;

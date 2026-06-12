@@ -110,6 +110,8 @@ HashNameNode *CMangler_OperatorName(short token) {
         case TK_OR_ASSIGN: return GetHashNameNodeExport("__aor");
         case TK_SHL: return GetHashNameNodeExport("__ls");
         case TK_SHR: return GetHashNameNodeExport("__rs");
+        case TK_MIN: return GetHashNameNodeExport("__min");
+        case TK_MAX: return GetHashNameNodeExport("__max");
         case TK_SHL_ASSIGN: return GetHashNameNodeExport("__als");
         case TK_SHR_ASSIGN: return GetHashNameNodeExport("__ars");
         case TK_LOGICAL_EQ: return GetHashNameNodeExport("__eq");
@@ -120,8 +122,6 @@ HashNameNode *CMangler_OperatorName(short token) {
         case TK_LOGICAL_OR: return GetHashNameNodeExport("__oo");
         case TK_INCREMENT: return GetHashNameNodeExport("__pp");
         case TK_DECREMENT: return GetHashNameNodeExport("__mm");
-        case TK_MIN: return GetHashNameNodeExport("__min");
-        case TK_MAX: return GetHashNameNodeExport("__max");
         case ',': return GetHashNameNodeExport("__cm");
         case TK_ARROW_STAR: return GetHashNameNodeExport("__rm");
         case TK_ARROW: return GetHashNameNodeExport("__rf");
@@ -224,9 +224,10 @@ static void CMangler_AppendTemplateArgumentList(TemplArg *arg) {
 
     AppendGListByte(&name_mangle_list, '<');
 
-    while (arg) {
+    for (; arg != NULL; arg = arg->next) {
         if (arg->pid.type == TPT_NONTYPE) {
             expr = arg->data.paramdecl.expr;
+            #line 443
             CError_ASSERT(expr);
             if (!CTemplTool_IsTypeDepExpr(expr)) {
                 switch (expr->type) {
@@ -240,21 +241,25 @@ static void CMangler_AppendTemplateArgumentList(TemplArg *arg) {
                         break;
                     case EOBJACCESS:
                         AppendGListByte(&name_mangle_list, '&');
-                        switch (expr->data.objaccess.object->otype) {
+                        // These types are probably quite wrong
+                        switch (expr->data.objaccess.object->objref->otype) {
                             case OT_MEMBERVAR:
-                                AppendGListName(&name_mangle_list, OBJECT(expr->data.objaccess.object)->name->name);
+                                AppendGListName(&name_mangle_list, expr->data.objaccess.object->objref->name->name);
                                 AppendGListName(&name_mangle_list, "__");
-                                CError_ASSERT(expr->data.objaccess.object2 != NULL);
-                                CMangler_MangleNameSpaceName(expr->data.objaccess.object2->nspace, expr->data.objaccess.object2->nspace->name->name);
+                                #line 466
+                                CError_ASSERT(expr->data.objaccess.access != NULL);
+                                CMangler_MangleNameSpaceName(expr->data.objaccess.access->nspace->parent, expr->data.objaccess.access->nspace->name->name);
                                 break;
                             case OT_OBJECT:
                                 AppendGListName(&name_mangle_list, CMangler_GetLinkName(OBJECT(expr->data.objlist.list->object))->name);
                                 break;
                             default:
+                                #line 478
                                 CError_FATAL();
                         }
                         break;
                     default:
+                        #line 483
                         CError_FATAL();
                 }
             } else {
@@ -271,7 +276,6 @@ static void CMangler_AppendTemplateArgumentList(TemplArg *arg) {
         if (arg->next) {
             AppendGListByte(&name_mangle_list, ',');
         }
-        arg = arg->next;
     }
 
     AppendGListByte(&name_mangle_list, '>');
@@ -477,12 +481,13 @@ static void CMangler_MangleTypeAppend(Type *type, UInt32 qual) {
         case TYPEMEMBERPOINTER:
             if (TYPE_MEMBER_POINTER(type)->ty2->type != TYPECLASS) {
                 AppendGListName(&name_mangle_list, "3<T>");
-            } else {
-                CMangler_MangleQualifier(TYPE_MEMBER_POINTER(type)->qual);
-                AppendGListByte(&name_mangle_list, 'M');
-                CMangler_MangleClassName(TYPE_CLASS(TYPE_MEMBER_POINTER(type)->ty2));
-                CMangler_MangleTypeAppend(TYPE_MEMBER_POINTER(type)->ty1, qual);
+                return;
             }
+
+            CMangler_MangleQualifier(TYPE_MEMBER_POINTER(type)->qual);
+            AppendGListByte(&name_mangle_list, 'M');
+            CMangler_MangleClassName(TYPE_CLASS(TYPE_MEMBER_POINTER(type)->ty2));
+            CMangler_MangleTypeAppend(TYPE_MEMBER_POINTER(type)->ty1, qual);
             return;
         case TYPEARRAY:
             AppendGListByte(&name_mangle_list, 'A');
@@ -544,24 +549,23 @@ static void CMangler_MangleTypeAppend(Type *type, UInt32 qual) {
 
             if (TYPE_STRUCT(type)->name && !IsTempName(TYPE_STRUCT(type)->name)) {
                 CMangler_MangleTypeName(TYPE_STRUCT(type)->name->name);
-                return;
+            } else {
+                switch (TYPE_STRUCT(type)->stype) {
+                    case STRUCT_TYPE_STRUCT:
+                        AppendGListName(&name_mangle_list, "struct");
+                        return;
+                    case STRUCT_TYPE_UNION:
+                        AppendGListName(&name_mangle_list, "union");
+                        return;
+                    case STRUCT_TYPE_CLASS:
+                        AppendGListName(&name_mangle_list, "class");
+                        return;
+                    default:
+                        #line 745
+                        CError_FATAL();
+                }
             }
-
-            switch (TYPE_STRUCT(type)->stype) {
-                case STRUCT_TYPE_STRUCT:
-                    AppendGListName(&name_mangle_list, "struct");
-                    return;
-                case STRUCT_TYPE_UNION:
-                    AppendGListName(&name_mangle_list, "union");
-                    return;
-                case STRUCT_TYPE_CLASS:
-                    AppendGListName(&name_mangle_list, "class");
-                    return;
-                default:
-                    #line 745
-                    CError_FATAL();
-            }
-            break;
+            return;
 
         case TYPECLASS:
             CMangler_MangleQualifier(qual);
@@ -573,6 +577,7 @@ static void CMangler_MangleTypeAppend(Type *type, UInt32 qual) {
             return;
 
         default:
+            #line 760
             CError_FATAL();
     }
 }

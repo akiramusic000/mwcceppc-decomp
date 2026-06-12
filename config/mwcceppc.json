@@ -40,7 +40,9 @@
             "nonMatching": true,
             "source": "CMangler.c",
             "memoryRanges": {
-                ".text": "0x16dad0-0x170030"
+                ".text": "0x16dad0-0x170030",
+                ".rdata": "0xc338-0xc510",
+                ".data": "0x42370-0x4285c"
             }
         }
     ]

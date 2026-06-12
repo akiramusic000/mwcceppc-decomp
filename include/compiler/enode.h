@@ -188,7 +188,7 @@ typedef union ENodeUnion {
     } objlist;
     struct {
         Object *object;
-        Object *object2;
+        Object *access;
     } objaccess;
     EMemberInfo *emember;
     void *inst;
